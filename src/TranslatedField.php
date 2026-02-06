@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace LePhare\DoctrineJsonTranslation;
 
-class TranslatedField implements \Stringable, \JsonSerializable
+/**
+ * @implements \ArrayAccess<string, string|null>
+ */
+class TranslatedField implements \ArrayAccess, \Stringable, \JsonSerializable
 {
     /**
-     * @param array<string, string> $array
+     * @param array<string, string|null> $array
      */
     public function __construct(
         protected array $array,
@@ -20,21 +23,21 @@ class TranslatedField implements \Stringable, \JsonSerializable
     public function __toString(): string
     {
         try {
-            return $this->get();
+            return $this->get() ?? '';
         } catch (\Exception $e) {
             return '';
         }
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|null>
      */
     public function all(): array
     {
         return $this->array;
     }
 
-    public function get(?string $locale = null): string
+    public function get(?string $locale = null): ?string
     {
         if (null === $locale && null !== $this->defaultLocale) {
             $locale = $this->defaultLocale;
@@ -67,5 +70,29 @@ class TranslatedField implements \Stringable, \JsonSerializable
     public function jsonSerialize(): string
     {
         return $this->__toString();
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        return isset($this->array[$offset]);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        if (null === $offset) {
+            throw new \BadFunctionCallException('offset should not be null');
+        }
+
+        $this->array[$offset] = $value;
+    }
+
+    public function offsetGet(mixed $offset): ?string
+    {
+        return $this->array[$offset] ?? null;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        unset($this->array[$offset]);
     }
 }

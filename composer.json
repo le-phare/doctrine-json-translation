@@ -23,6 +23,9 @@
     },
     "scripts": {
         "analyse": "vendor/bin/phpstan --memory-limit=512M analyse --no-progress --configuration phpstan.neon.dist",
+        "lint": [
+            "./vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run"
+        ],
         "lint:fix": [
             "./vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php"
         ]
