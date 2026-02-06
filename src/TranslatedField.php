@@ -67,9 +67,12 @@ class TranslatedField implements \ArrayAccess, \Stringable, \JsonSerializable
         return \array_key_exists($locale, $this->array);
     }
 
-    public function jsonSerialize(): string
+    /**
+     * @return array<string, string|null>
+     */
+    public function jsonSerialize(): array
     {
-        return $this->__toString();
+        return $this->array;
     }
 
     public function offsetExists(mixed $offset): bool
