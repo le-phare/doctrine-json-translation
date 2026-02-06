@@ -1,0 +1,26 @@
+parameters:
+    level: 8
+    paths:
+        - src
+
+    tmpDir: var/phpstan
+
+    banned_code:
+        nodes:
+            # enable detection of a set of functions
+            -
+                type: Expr_FuncCall
+                functions:
+                    - dd
+                    - debug_backtrace
+                    - dump
+                    - exec
+                    - passthru
+                    - phpinfo
+                    - print_r
+                    - proc_open
+                    - shell_exec
+                    - system
+                    - var_dump
+includes:
+	- vendor/ekino/phpstan-banned-code/extension.neon

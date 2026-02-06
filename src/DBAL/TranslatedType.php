@@ -1,68 +1,38 @@
 <?php
 
-namespace Erichard\DoctrineJsonTranslation\DBAL;
+declare(strict_types=1);
+
+namespace LePhare\DoctrineJsonTranslation\DBAL;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Types\Type;
-use Erichard\DoctrineJsonTranslation\TranslatedField;
+use Doctrine\DBAL\Types\JsonbType;
+use LePhare\DoctrineJsonTranslation\TranslatedField;
 
-class TranslatedType extends Type
+class TranslatedType extends JsonbType
 {
-    /**
-     * {@inheritdoc}
-     */
-    public function getSQLDeclaration(array $fieldDeclaration, AbstractPlatform $platform)
+    public function convertToPHPValue(mixed $value, AbstractPlatform $platform): ?TranslatedField
     {
-        return 'JSONB';
-    }
+        $array = parent::convertToPHPValue($value, $platform);
 
-    /**
-     * {@inheritdoc}
-     */
-    public function convertToPHPValue($value, AbstractPlatform $platform)
-    {
-        if (null === $value || '' === $value) {
+        if (!\is_array($array)) {
             return null;
         }
 
-        $value = (is_resource($value)) ? stream_get_contents($value) : $value;
-
-        $value = json_decode($value, true);
-
-        return new TranslatedField($value);
+        return new TranslatedField($array);
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function convertToDatabaseValue($value, AbstractPlatform $platform)
+    public function convertToDatabaseValue(mixed $value, AbstractPlatform $platform): ?string
     {
         if (null === $value) {
             return null;
         }
 
-        if ($value instanceof TranslatedField) {
-            $value = $value->all();
+        $result = json_encode($value);
+
+        if (false === $result) {
+            return null;
         }
 
-        $json = json_encode($value);
-
-        return $json;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getName()
-    {
-        return 'translated';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function requiresSQLCommentHint(AbstractPlatform $platform)
-    {
-        return true;
+        return $result;
     }
 }

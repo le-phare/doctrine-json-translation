@@ -1,23 +1,26 @@
 <?php
 
-namespace Erichard\DoctrineJsonTranslation;
+declare(strict_types=1);
 
-use InvalidArgumentException;
-use JsonSerializable;
-use ArrayAccess;
+namespace LePhare\DoctrineJsonTranslation;
 
-class TranslatedField implements JsonSerializable, ArrayAccess
+/**
+ * @implements \ArrayAccess<string, mixed>
+ */
+class TranslatedField implements \ArrayAccess, \Stringable, \JsonSerializable
 {
-    protected $array;
-    protected $defaultLocale;
-
-    public function __construct($array)
-    {
+    /**
+     * @param array<string, mixed> $array
+     */
+    public function __construct(
+        protected array $array,
+        protected ?string $defaultLocale = \Locale::DEFAULT_LOCALE,
+    ) {
         $this->array = $array;
         $this->defaultLocale = \Locale::getDefault();
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         try {
             return $this->get() ?? '';
@@ -26,69 +29,77 @@ class TranslatedField implements JsonSerializable, ArrayAccess
         }
     }
 
-    public function __get($locale)
+    /**
+     * @return array<string, mixed>
+     */
+    public function all(): array
     {
-        return $this->get($locale);
+        return $this->array;
     }
 
-    public function __set($locale, $value)
+    public function get(?string $locale = null): mixed
     {
-        return $this->array[$locale] = $value;
-    }
-
-    public function get($locale = null)
-    {
-        if (null === $locale) {
+        if (null === $locale && null !== $this->defaultLocale) {
             $locale = $this->defaultLocale;
         }
 
-        return $this->array[$locale] ?? null;
-    }
+        if (null === $locale) {
+            throw new \RuntimeException('No locale provided and no default locale set');
+        }
 
-    public function find($locale = null)
-    {
-        if (!$this->has($locale)) {
-            return null;
+        if (!\array_key_exists($locale, $this->array)) {
+            throw new \RuntimeException('Locale '.$locale.' does not exist in this Field');
         }
 
         return $this->array[$locale];
     }
 
-    public function has($locale = null)
+    public function set(mixed $offset, mixed $value): void
     {
-        if (null === $locale) {
+        if (null === $offset) {
+            throw new \BadFunctionCallException('offset should not be null');
+        }
+
+        $this->array[$offset] = $value;
+    }
+
+    public function has(?string $locale = null): bool
+    {
+        if (null === $locale && null !== $this->defaultLocale) {
             $locale = $this->defaultLocale;
         }
 
-        return array_key_exists($locale, $this->array);
+        if (null === $locale) {
+            throw new \RuntimeException('No locale provided and no default locale set');
+        }
+
+        return \array_key_exists($locale, $this->array);
     }
 
-    public function all()
+    /**
+     * @return array<string, mixed>
+     */
+    public function jsonSerialize(): array
     {
         return $this->array;
     }
 
-    public function jsonSerialize()
-    {
-        return $this->__toString();
-    }
-
-    public function offsetExists($offset)
+    public function offsetExists(mixed $offset): bool
     {
         return isset($this->array[$offset]);
     }
 
-    public function offsetSet($offset, $value)
+    public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->array[$offset] = $value;
+        $this->set($offset, $value);
     }
 
-    public function offsetGet($offset)
+    public function offsetGet(mixed $offset): mixed
     {
         return $this->array[$offset] ?? null;
     }
 
-    public function offsetUnset($offset)
+    public function offsetUnset(mixed $offset): void
     {
         unset($this->array[$offset]);
     }

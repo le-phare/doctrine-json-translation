@@ -1,8 +1,10 @@
 <?php
 
-namespace Erichard\DoctrineJsonTranslation\Bridge\Symfony\Form;
+declare(strict_types=1);
 
-use Erichard\DoctrineJsonTranslation\TranslatedField;
+namespace LePhare\DoctrineJsonTranslation\Form\Type;
+
+use LePhare\DoctrineJsonTranslation\TranslatedField;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
@@ -11,44 +13,43 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 
 class TranslatedType extends AbstractType
 {
-    protected $availableLocales;
-
-    public function __construct($availableLocales)
-    {
-        $this->availableLocales = $availableLocales;
+    /**
+     * @param list<string> $availableLocales
+     */
+    public function __construct(
+        private readonly array $availableLocales,
+    ) {
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function buildForm(FormBuilderInterface $builder, array $options)
+    public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         foreach ($this->availableLocales as $locale) {
-            $builder->add($locale, $options['entry_type'], array_merge(['label' => false], $options['entry_options']));
+            $builder->add($locale, $options['entry_type'], \array_merge(['label' => false], $options['entry_options']));
         }
 
         $builder->addViewTransformer(new CallbackTransformer(
             function ($fieldAsObject = null) {
                 if (null === $fieldAsObject) {
                     return null;
-                } elseif (is_array($fieldAsObject)) {
-                    return $fieldAsObject;
-                } elseif ($fieldAsObject instanceof TranslatedField) {
-                    return $fieldAsObject->all();
-                } else {
-                    throw new \InvalidArgumentException();
                 }
+
+                if (\is_array($fieldAsObject)) {
+                    return $fieldAsObject;
+                }
+
+                if ($fieldAsObject instanceof TranslatedField) {
+                    return $fieldAsObject->all();
+                }
+
+                throw new \InvalidArgumentException();
             },
-            function ($fieldAsArray) {
+            function ($fieldAsArray): TranslatedField {
                 return new TranslatedField($fieldAsArray);
             }
         ));
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function configureOptions(OptionsResolver $resolver)
+    public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'entry_type' => TextType::class,
