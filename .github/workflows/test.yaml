@@ -1,0 +1,42 @@
+name: Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["*"]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+
+    strategy:
+      matrix:
+        php_version: ["8.1", "8.2", "8.3", "8.4", "8.5"]
+
+    runs-on: ubuntu-latest
+    container:
+      image: "lephare/php:${{ matrix.php_version }}"
+      env:
+        XDEBUG_MODE: coverage
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Validate composer.json and composer.lock
+      run: composer validate --strict
+
+    - name: Install dependencies (PHP ${{ matrix.php_version }})
+      run: |
+        composer config --global cache-dir .composer
+        composer install --prefer-dist --no-interaction --no-progress
+
+    - name: Coding Style (PHP ${{ matrix.php_version }})
+      run: |
+        composer run-script lint:ci
+        composer run-script analyse
+
+    # - name: Unit Tests (PHP ${{ matrix.php_version }})
+    #   run: composer run-script test:ci
